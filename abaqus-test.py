@@ -1,9 +1,9 @@
 # def materiel_elastic(E , poisson, Nom):
-    """
-    E: float
-    poisson: float
-    Nom: str
-    """
+"""
+E: float
+poisson: float
+Nom: str
+"""
     # mdb.models['Model-1'].Material(name=Nom)
     # mdb.models['Model-1'].materials[Nom].Elastic(table=((E, poisson), ))
 
@@ -13,9 +13,7 @@
     # E = 200000 + 10000*i
     # materiel_elastic(E, 0.4, 'steel-'+str(E))
 
-"""
 class concrete:
-    E = 21200
     Poisson = 0.2
     Name = "B20"
     DilationAngle = 31
@@ -24,6 +22,7 @@ class concrete:
     K = 0.67
     ViscosityParameter = 0
     fcPrime = 20
+
     def __init__(self, E, Poisson, Name, DilationAngle, Eccentricity, fb0_fc0, K, ViscosityParameter, fcPrime):
         self.E = E
         self.Poisson = Poisson
@@ -33,26 +32,53 @@ class concrete:
         self.fb0_fc0 = fb0_fc0
         self.K = K
         self.ViscosityParameter = ViscosityParameter
-B20 = concrete(0, 0, 0, 0, 0, 0, 0, 0)
-B30 = concrete(0, 0, 0, 0, 0, 0, 0, 0)
-B40 = concrete(0, 0, 0, 0, 0, 0, 0, 0)
-B50 = concrete(0, 0, 0, 0, 0, 0, 0, 0)
+
+B20 = concrete(0, 0, 0, 0, 0, 0, 0, 0, 0)
+B30 = concrete(0, 0, 0, 0, 0, 0, 0, 0, 0)
+B40 = concrete(0, 0, 0, 0, 0, 0, 0, 0, 0)
+B50 = concrete(0, 0, 0, 0, 0, 0, 0, 0, 0)
+"""
+class test:
+    PI = 3.14
+    E = 20000
+
+    def __init__(self, E, PI):
+        self.E = E
+        self.PI = PI
+
+t = test(2, 5)
 """
 
 
+
+
 #Functions
-def beton_hognestad(epsilon0 , fc_prime, increments, E):
+def beton_hognestad(epsilon0 , fc_prime, increments):
+    E = 4500*(fc_prime)**(1/2)
     CPH = []
     CCD = []
-        for i in range (0, increments + 1):
+    for i in range (0, increments + 1):
         #use variables
-        epsilon = 0+epsilon0/increments*i
+        epsilon = 0.4*fc_prime/E + epsilon0/increments*i
         fc = fc_prime*(2*epsilon/epsilon0-(epsilon/epsilon0)**2)
         CCD.append((0 , epsilon - fc/E))
         CPH.append((epsilon - fc/E , fc))
     CPH.append((0.0038 - fc_prime*0.85/E , fc_prime*0.85))
     CCD.append((1-fc_prime*0.85/fc_prime , 0.0038 - fc_prime*0.85/E))
     return CPH , CCD
+
+def beton_tension(epsilontMax, fc_prime, increments):
+    E = 4500*(fc_prime)**(1/2)
+    ft_prime = 0.6*(fc_prime)**(1/2)
+    epsiloncrtc = ft_prime/E
+    CTS = []
+    CTD = []
+    for i in range (0, increments + 1):
+        epsilont = epsiloncrtc + epsilontMax/increments*i
+        fct = ft_prime/(1+(200*epsilont)**(1/2))
+        CTS.append((epsilont - fct/E, fct))
+        CTD.append((1-fct/ft_prime, epsilont - fct/E))
+    return CTS , CTD
 
 
 #Part Section
@@ -82,38 +108,19 @@ mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.Concre
 mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteCompressionDamage(table=((0.0, 0.0), (0.0, 7.73585e-05), (0.0, 0.000173585), (0.0, 0.000288679), (0.0, 0.000422642), (0.0, 0.000575472), (0.0, 0.00074717), (0.0, 0.000937736), (0.01, 0.00114717), (0.04, 0.001375472), (0.09, 0.001622642), (0.16, 0.001888679), (0.25, 0.002173585), (0.36, 0.002477358), (0.49, 0.0028), (0.64, 0.003141509), (0.81, 0.003501887)))
 mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteTensionDamage(table=((0.0, 0.0), (0.99, 0.000943396)))
 
-class test:
-    PI = 3.14
-    E = 20000
 
-    def __init__(self, E, PI):
-        self.E = E
-        self.PI = PI
 
-t = test(2, 5)
-
-def material(E, Poisson, DilationAngle, Eccentricity, fb0_fc0, K, ViscosityParameter):
-    mdb.models['Model-1'].Material(name='Concrete B20')
-    mdb.models['Model-1'].materials['Concrete B20'].Elastic(table=((E, Poisson), ))
-    mdb.models['Model-1'].materials['Concrete B20'].ConcreteDamagedPlasticity(table=((DilationAngle, Eccentricity, fb0_fc0, K, ViscosityParameter), ))
-    CPH = []
-    for i in range (0, 21):
-        #use variables
-        # print(i)
-        epsilon = 0+0.002/20*i
-        # print(epsilon)
-        fc = 20*(2*epsilon/0.002-(epsilon/0.002)**2)
-        # print(fc)
-        CPH.append((epsilon , fc))
-        # CPH = CPH + [(epsilon , fc)]
-    CPH.append((0.0038 , 20*0.85))
-    mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteCompressionHardening(table=tuple(CPH))
-    #print(CPH)
-    #print(tuple(CPH))
-    #mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteCompressionHardening(table=((10.2, 0.0), (12.8, 7.73585e-05), (15.0, 0.000173585), (16.8, 0.000288679), (18.2, 0.000422642), (19.2, 0.000575472), (19.8, 0.00074717), (20.0, 0.000937736), (19.8, 0.00114717), (19.2, 0.001375472), (18.2, 0.001622642), (16.8, 0.001888679), (15.0, 0.002173585), (12.8, 0.002477358), (10.2, 0.0028), (7.2, 0.003141509), (3.8, 0.003501887)))
-    mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteTensionStiffening(table=((2.0, 0.0), (0.02, 0.000943396)))
-    mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteCompressionDamage(table=((0.0, 0.0), (0.0, 7.73585e-05), (0.0, 0.000173585), (0.0, 0.000288679), (0.0, 0.000422642), (0.0, 0.000575472), (0.0, 0.00074717), (0.0, 0.000937736), (0.01, 0.00114717), (0.04, 0.001375472), (0.09, 0.001622642), (0.16, 0.001888679), (0.25, 0.002173585), (0.36, 0.002477358), (0.49, 0.0028), (0.64, 0.003141509), (0.81, 0.003501887)))
-    mdb.models['Model-1'].materials['Concrete B20'].concreteDamagedPlasticity.ConcreteTensionDamage(table=((0.0, 0.0), (0.99, 0.000943396)))    
+#def material(E, Poisson, DilationAngle, Eccentricity, fb0_fc0, K, ViscosityParameter):
+#New Material Description
+CPH, CCD = beton_hognestad(0.02, B20.fcPrime, 20)
+CTS, CTD = beton_tension(0.05, B20.fcPrime, 20)
+mdb.models['Model-1'].Material(name=B20.Name)
+mdb.models['Model-1'].materials[B20.Name].Elastic(table=((B20.E, B20.Poisson), ))
+mdb.models['Model-1'].materials[B20.Name].ConcreteDamagedPlasticity(table=((B20.DilationAngle, B20.Eccentricity, B20.fb0_fc0, B20.K, B20.ViscosityParameter), ))
+mdb.models['Model-1'].materials[B20.Name].concreteDamagedPlasticity.ConcreteCompressionHardening(table=tuple(CPH))
+mdb.models['Model-1'].materials[B20.Name].concreteDamagedPlasticity.ConcreteTensionStiffening(table=tuple(CTS))
+mdb.models['Model-1'].materials[B20.Name].concreteDamagedPlasticity.ConcreteCompressionDamage(table=tuple(CCD))
+mdb.models['Model-1'].materials[B20.Name].concreteDamagedPlasticity.ConcreteTensionDamage(table=tuple(CTD))    
 
 #Section Creation
 mdb.models['Model-1'].HomogeneousSolidSection(name='Section-1', material='Concrete B20', thickness=None)
